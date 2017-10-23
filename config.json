@@ -1,0 +1,9 @@
+{
+	"api_key": "API_KEY_GOES_HERE",
+	"cache_dir": "/tmp/conky",
+	"city_id": "1852140",
+	"language": "en",
+	"location": "",
+	"units": "metric",
+	"type": "current"
+}

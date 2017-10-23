@@ -1,0 +1,121 @@
+conky.config = {
+-- conky configuration
+
+-- set to yes if you want Conky to be forked in the background
+	background = true,
+
+-- Use Xft?
+	use_xft = true,
+	font = 'Liberation Sans:size=9',
+	xftalpha = 0.1,
+
+-- Print everything to console?
+	out_to_console = false,
+
+-- mail spool
+--mail_spool $MAIL
+
+-- Update interval in seconds
+	update_interval = 1.0,
+
+-- This is the number of times Conky will update before quitting.
+-- Set to zero to run forever.
+	total_run_times = 0,
+
+-- Create own window instead of using desktop (required in nautilus)
+	own_window = true,
+	own_window_type = 'override',
+	own_window_hints = 'undecorated,below,sticky,skip_taskbar,skip_pager',
+	own_window_transparent = true,
+
+-- Use double buffering (reduces flicker, may not work for everyone)
+	double_buffer = true,
+
+-- Draw shades?
+	draw_shades = true,
+
+-- Draw outlines?
+	draw_outline = true,
+
+-- Draw borders around text
+	draw_borders = false,
+	draw_graph_borders = false,
+
+-- Stippled borders?
+	stippled_borders = 0,
+
+-- border margins
+	border_inner_margin = 0,
+
+-- border width
+	border_width = 1,
+
+-- Default colors and also border colors
+	default_color = 'white',
+	default_shade_color = 'black',
+	default_outline_color = 'black',
+
+-- Minimum size of text area
+--	minimum_width = 72, minimum_height = 72,
+--	maximum_width = 172,
+
+-- Text alignment, other possible values are commented
+--alignment top_left
+	alignment = 'bottom_left',
+--alignment bottom_left
+--alignment bottom_right
+
+-- Gap between borders of screen and text
+-- same thing as passing -x at command line
+	gap_x = 0,
+	gap_y = 50,
+
+-- Subtract file system buffers from used memory?
+	no_buffers = true,
+
+-- set to yes if you want all text to be in uppercase
+	uppercase = false,
+
+-- number of cpu samples to average
+-- set to 1 to disable averaging
+	cpu_avg_samples = 1,
+
+-- number of net samples to average
+-- set to 1 to disable averaging
+	net_avg_samples = 1,
+
+-- Force UTF8? note that UTF8 support required XFT
+	override_utf8_locale = true,
+
+-- Add spaces to keep things from moving about?  This only affects certain objects.
+	use_spacer = 'none',
+
+-- grey
+   	default_color = '#DDDDDD',
+-- Orange
+   	color1 = '#FFA300',
+-- Green
+	color2 = '#77B753',
+
+	text_buffer_size = 4096,
+	own_window_title = 'conky_simpleforecast',
+
+-- variable is given either in format $variable or in ${variable}. Latter
+-- allows characters right after the variable and must be used in network
+-- stuff because of an argument
+
+-- stuff after 'TEXT' will be formatted on screen
+};
+
+conky.text = [[
+${offset 15}${font ConkyWeather:size=46}${execi 120 ./conkySimpleForecast -d font}${font}${voffset -30}${offset 10}${color1}${font GE Inspira:pixelsize=36}${execi 120 ./conkySimpleForecast -d temp}°C${font}${voffset -40}${offset -75}${color}${font GE Inspira:pixelsize=18:bold}${execi 120 ./conkySimpleForecast -d summary} (${execi 120 ./conkySimpleForecast -d condition})
+${offset 160}${voffset -10}${font}${color}${font GE Inspira:pixelsize=36}  |  ${execi 120 ./conkySimpleForecast -d city}  |  ${font}${voffset -20}${color}${font Conkywind:size=42}${execi 120 ./conkySimpleForecast -d wind_deg_font}${font} ${font}${voffset -35}${color}${font GE Inspira:pixelsize=36}${execi 120 ./conkySimpleForecast -d wind_deg}${font}  
+${voffset 15}${offset 12}${color1}Wind speed:${offset 5}${font Ubuntu:pixelsize=12:bold}${color}${execi 120 ./conkySimpleForecast -d wind_speed} m/s${font}   | ${offset 5}${color1}Temp min/max: ${offset 5}${color}${font Ubuntu:pixelsize=12:bold}${execi 120 ./conkySimpleForecast -d temp_min}°C / ${execi 120 ./conkySimpleForecast -d temp_max}°C${font}    | ${offset 5}${color1}Humidity: ${offset 5}${color}${font Ubuntu:pixelsize=12:bold}${execi 120 ./conkySimpleForecast -d humidity}%${font}
+${voffset -5}${offset 12}${color1}${stippled_hr 1}${color}
+${offset 12}${color1}Pressure: ${offset 5}${color}${font Ubuntu:pixelsize=12:bold}${execi 120 ./conkySimpleForecast -d pressure} hPa${font}        | ${offset 5}${color1}Clouds: ${offset 5}${color}${font Ubuntu:pixelsize=12:bold}${execi 120 ./conkySimpleForecast -d clouds}${font}${offset 92}|  ${color1}Visibility: ${offset 5}${color}${font Ubuntu:pixelsize=12:bold}${execi 120 ./conkySimpleForecast -d visibility}m${font}
+${voffset -5}${offset 12}${color1}${stippled_hr 1}${color}
+${offset 12}${color1}Sunrise: ${offset 5}${color}${font Ubuntu:pixelsize=12:bold}${execi 120 ./conkySimpleForecast -d sunrise}${offset 42}${font} |   ${color1}Sunset: ${offset 5}${color}${font Ubuntu:pixelsize=12:bold}${execi 120 ./conkySimpleForecast -d sunset}${font}
+${voffset -5}${offset 12}${color1}${stippled_hr 1}${color}
+${offset 12}${color1}Last fetched: ${offset 5}${color}${font Ubuntu:pixelsize=12:bold}${execi 120 ./conkySimpleForecast -d dt}
+
+]]; 

@@ -1,0 +1,3 @@
+#!/bin/bash
+
+LC_ALL=en_US.UTF-8 conky -c conky_simpleforcast

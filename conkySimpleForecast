@@ -1,0 +1,315 @@
+#!/bin/bash
+#
+# Fetches weather data from openweathermap.com
+
+# TODO
+# - support templates and populate it in one big call
+# - support wind directions http://snowfence.umn.edu/Components/winddirectionanddegreeswithouttable3.htm
+# - after sunset, use the night fonts instead of the day fonts
+# - finish WEATHER_CONDITIONS (http://bluejamesbond.github.io/CharacterMap/)
+
+OPENWEATHERMAP_BASE_URL="http://api.openweathermap.org/data/2.5/"
+
+# tools required
+CURL=`which curl`
+JQ=`which jq`
+
+if [[ -z "${CURL}" ]]; then
+  echo "ERROR: curl is not installed."
+  exit -1
+fi
+
+if [[ -z "${JQ}" ]]; then
+  echo "ERROR: jq is not installed."
+  exit -1
+fi
+
+while getopts ":d:c:q:u:a:q:l:t:i:f:" opt; do
+  case $opt in
+    a) API_KEY="${OPTARG}" ;;
+    c) CACHE_DIR="${OPTARG}" ;;
+    d) DATATYPE="${OPTARG}" ;;
+    f) CONFIG="${OPTARG}" ;;
+    i) CITY_ID="${OPTARG}" ;;
+    l) LANGUAGE="${OPTARG}" ;;
+    q) LOCATION="${OPTARG}" ;;
+    t) TYPE="${OPTARG}" ;;
+    u) UNITS="${OPTARG}" ;;
+    \?) echo "Invalid option -${OPTARG}" >&2 ;;
+  esac
+done
+
+if [[ -z "${CONFIG}" ]]; then
+  CONFIG="config.json"
+fi
+
+
+API_KEY=${API_KEY:-$(cat ${CONFIG} | jq '.api_key' -r)}
+CACHE_DIR=${CACHE_DIR:-$(cat ${CONFIG} | jq '.cache_dir' -r)}
+CITY_ID=${CITY_ID:-$(cat ${CONFIG} | jq '.city_id' -r)}
+LANGUAGE=${LANGUAGE:-$(cat ${CONFIG} | jq '.language' -r)} # valid values are: see languages.txt
+LOCATION=${LOCATION:-$(cat ${CONFIG} | jq '.location' -r)}
+TYPE=${TYPE:-$(cat ${CONFIG} | jq '.type' -r)}  # valid values are [current, forecast]
+UNITS=${UNITS:-$(cat ${CONFIG} | jq '.units' -r)}
+
+function lock() {
+
+ lockdir="${CACHE_DIR}/refresh.lock"
+ if mkdir "$lockdir"
+ then
+     echo >&2 "successfully acquired lock"
+     trap 'rm -rf "$lockdir"' 0    # remove directory when script finishes
+ else
+     echo >&2 "cannot acquire lock, giving up on $lockdir"
+     sleep 0.5
+ fi
+
+}
+
+
+function get_weather_url() {
+  url=${OPENWEATHERMAP_BASE_URL}
+  case $1 in
+  current)
+    url+="weather"
+  ;;
+  forecast)
+    url+="forecast"
+  ;;
+  esac
+
+  # location
+  if [[ ! -z "${LOCATION}" ]]; then
+    url+="?q=${LOCATION}"
+  fi
+
+  # city_id
+  if [[ ! -z "${CITY_ID}" ]]; then
+    url+="?id=${CITY_ID}"
+  fi
+
+  # application id
+  url+="&APPID=${API_KEY}"
+
+  # units
+  url+="&units=${UNITS}"
+
+  # lang
+  url+="&lang=${LANGUAGE}"
+
+  # accurate
+  url+="&type=accurate"
+
+  echo $url
+}
+
+function get_cache_path() {
+  case $TYPE in
+  current)
+    cache_name="current_weather.cache"
+  ;;
+  forecast)
+    cache_name="forecast_weather.cache"
+  ;;
+  esac
+
+  echo ${CACHE_DIR}/${cache_name}
+}
+
+#######################################
+# Check the cache file and determine
+# if it needs to be updated or not
+# Globals:
+#   None
+# Arguments:
+#   None
+# Returns:
+#   0 or 1
+#######################################
+function cache_needs_refresh() {
+  cache_path=$(get_cache_path)
+  now=$(date +%s)
+
+  # if the cache does not exist, refresh it
+  if [[ ! -f "${cache_path}" ]]; then
+    return 1
+  fi
+
+  last_modification_date=$(stat -c %Y ${cache_path})
+  seconds=$(expr ${now} - ${last_modification_date})
+
+  if [[ "${seconds}" -gt 120 ]]; then
+    return 1
+  else
+    return 0
+  fi
+}
+
+function fetch_weather() {
+  cache_needs_refresh
+  refresh=$?
+  url=$(get_weather_url ${TYPE})
+  # echo ${url}
+  cache_path=$(get_cache_path)
+  if [[ ! -f "${cache_path}" ]] || [[ "${refresh}" -eq 1 ]]; then
+    ${CURL} -s ${url} > ${cache_path}.$$
+    mv ${cache_path}.$$ ${cache_path}
+  fi
+}
+
+
+function create_cache() {
+  if [[ ! -d "${CACHE_DIR}" ]]; then
+    mkdir -p ${CACHE_DIR}
+  fi
+}
+
+function return_field() {
+
+  if [[ -z "${DATATYPE}" ]]; then
+    echo "ERROR: missing datatype. Please provide it via the -p option."
+  fi
+
+  cache_path=$(get_cache_path)
+
+  case ${TYPE} in
+    current)
+      case ${DATATYPE} in
+        condition)
+          data=$(cat ${cache_path} | ${JQ} '.weather[] | .main' -r | paste -sd ',' -)
+          ;;
+        summary)
+          data=$(cat ${cache_path} | ${JQ} '.weather[0].description' -r)
+          ;;
+        temp|pressure|humidity|temp_min|temp_max)
+          data=$(cat ${cache_path} | ${JQ} ".main.${DATATYPE}" -r |  xargs printf "%.f" $p)
+          ;;
+        clouds)
+          data=$(cat ${cache_path} | ${JQ} ".clouds.all" -r)"%"
+          ;;
+        visibility)
+          data=$(cat ${cache_path} | ${JQ} ".visibility" -r)
+          ;;
+        wind_speed)
+          data=$(cat ${cache_path} | ${JQ} ".wind.speed" -r)
+          ;;
+        wind_deg)
+          data=$(cat ${cache_path} | ${JQ} ".wind.deg" -r)
+          data=$(wind_deg_to_text ${data})
+          ;;
+        wind_deg_font)
+            tmp_data=$(cat ${cache_path} | ${JQ} ".wind.deg" -r)
+            data=$(wind_deg_to_font ${tmp_data})
+          ;;
+        sunrise|sunset)
+          tmp_data=$(cat ${cache_path} | ${JQ} ".sys.${DATATYPE}" -r)
+          data=$(date -d @"${tmp_data}" "+%H:%M")
+          ;;
+        city)
+          data=$(cat ${cache_path} | ${JQ} ".name" -r)
+          ;;
+        icon)
+          data=$(cat ${cache_path} | ${JQ} ".weather[0].icon" -r)
+          if [[ ! -f "images/${data}.png" ]]; then
+            curl -s -o "images/${data}.png" "http://openweathermap.org/img/w/${data}.png"
+          fi
+          ;;
+        font)
+          # ${offset 15}${color EAEAEA}${font ConkyWeather:size=46}${execi 120 conkySimpleForecast -d font}${font}${voffset -30}
+          tmp_data=$(cat ${cache_path} | ${JQ} '.weather[0].id' -r)
+          data=$(cat ./fonts.json | ${JQ} .[\""$tmp_data"\"] -r)
+          ;;
+        dt)
+          data=$(cat ${cache_path} | ${JQ} '.dt')
+          data=$(date -d @${data})
+          ;;
+        *)
+          data="N/A"
+          ;;
+        esac
+      ;;
+    forecast)
+      data=$(cat ${cache_path} | ${JQ} '.city.name')
+      ;;
+    *) echo "Unknown type" ;;
+  esac
+
+  echo $data
+}
+
+function wind_deg_to_text() {
+  local deg=$1
+  # N 348.75 - 11.25
+  if [[ "${deg}" -ge 348 ]] || [[ "${deg}" -le 11 ]];  then
+    echo "N"
+  # NNE 11.25 - 33.75
+  elif [[ "${deg}" -gt 11 ]] && [[ "${deg}" -lt 34 ]];  then
+    echo "NNE"
+  # NE 33.75 - 56.25
+  elif [[ "${deg}" -ge 34 ]] && [[ "${deg}" -lt 56 ]]; then
+    echo "NE"
+  # ENE 56.25 - 78.75
+  elif [[ "${deg}" -ge 56 ]] && [[ "${deg}" -lt 78 ]]; then
+    echo "ENE"
+  # E 78.75 - 101.25
+  elif [[ "${deg}" -ge 78 ]] && [[ "${deg}" -lt 101 ]]; then
+    echo "E"
+  # ESE 101.25 - 123.75
+  elif [[ "${deg}" -ge 101 ]] && [[ "${deg}" -lt 123 ]]; then
+    echo "ESE"
+  # SE 123.75 - 146.25
+  elif [[ "${deg}" -ge 123 ]] && [[ "${deg}" -lt 146 ]]; then
+    echo "SE"
+  # SSE 146.25 - 168.75
+  elif [[ "${deg}" -ge 146 ]] && [[ "${deg}" -lt 168 ]]; then
+    echo "SSE"
+  # S 168.75 - 191.25
+  elif [[ "${deg}" -ge 168 ]] && [[ "${deg}" -lt 191 ]]; then
+    echo "S"
+  # SSW 191.25 - 213.75
+  elif [[ "${deg}" -ge 191 ]] && [[ "${deg}" -lt 213 ]]; then
+    echo "SSW"
+  # SW 213.75 - 236.25
+  elif [[ "${deg}" -ge 213 ]] && [[ "${deg}" -lt 236 ]]; then
+    echo "SW"  
+  # WSW 236.25 - 258.75
+  elif [[ "${deg}" -ge 236 ]] && [[ "${deg}" -lt 258 ]]; then
+    echo "WSW" 
+  # W 258.75 - 281.25
+  elif [[ "${deg}" -ge 258 ]] && [[ "${deg}" -lt 281 ]]; then
+    echo "W" 
+  # WNW 281.25 - 303.75
+  elif [[ "${deg}" -ge 281 ]] && [[ "${deg}" -lt 303 ]]; then
+    echo "WNW" 
+  # NW 303.75 - 326.25
+  elif [[ "${deg}" -ge 303 ]] && [[ "${deg}" -lt 326 ]]; then
+    echo "NW" 
+  # NNW 326.25 - 348.75
+  elif [[ "${deg}" -ge 326 ]] && [[ "${deg}" -lt 348 ]]; then
+    echo "NW" 
+  else
+    echo "N/A"
+  fi
+}
+
+function wind_deg_to_font() {
+  local deg=$1
+  text=$(wind_deg_to_text "${deg}")
+  data=$(cat ./wind_direction.json | ${JQ} ".${text}" -r)
+  echo $data
+
+}
+
+if [[ -z "${API_KEY}" ]]; then
+  echo "ERROR: missing api_key. Please provide it via -a myapikey option"
+  echo "ERROR: Get a free api_key from https://home.openweathermap.org/api_keys"
+  exit -1
+fi
+
+if [[ -z "${LOCATION}" ]] && [[ -z "${CITY_ID}" ]]; then
+  echo "ERROR: location (-l) or city id (-i) should must be given."  
+fi
+
+create_cache
+fetch_weather
+return_field
