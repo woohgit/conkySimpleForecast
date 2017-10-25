@@ -153,7 +153,13 @@ function fetch_weather() {
   cache_path=$(get_cache_path)
   if [[ ! -f "${cache_path}" ]] || [[ "${refresh}" -eq 1 ]]; then
     ${CURL} -s ${url} > ${cache_path}.$$
-    mv ${cache_path}.$$ ${cache_path}
+    # only update the file if we successfully retrieved the JSON
+    num_of_lines=$(cat "${cache_path}.$$" | wc -c)
+    if [[ "${num_of_lines}" -gt 200 ]]; then
+      mv "${cache_path}.$$" ${cache_path}
+    else
+      rm -f ${cache_path}.$$
+    fi
   fi
 }
 
