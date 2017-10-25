@@ -109,13 +109,13 @@ conky.config = {
 
 conky.text = [[
 ${offset 15}${font ConkyWeather:size=46}${execi 120 ./conkySimpleForecast -d font}${font}${voffset -30}${offset 10}${color1}${font GE Inspira:pixelsize=36}${execi 120 ./conkySimpleForecast -d temp}°C${font}${voffset -40}${offset -75}${color}${font GE Inspira:pixelsize=18:bold}${execi 120 ./conkySimpleForecast -d summary} (${execi 120 ./conkySimpleForecast -d condition})
-${offset 160}${voffset -10}${font}${color}${font GE Inspira:pixelsize=36}  |  ${execi 120 ./conkySimpleForecast -d city}  |  ${font}${voffset -20}${color}${font Conkywind:size=42}${execi 120 ./conkySimpleForecast -d wind_deg_font}${font} ${font}${voffset -35}${color}${font GE Inspira:pixelsize=36}${execi 120 ./conkySimpleForecast -d wind_deg}${font}  
-${voffset 15}${offset 12}${color1}Wind speed:${offset 5}${font Ubuntu:pixelsize=12:bold}${color}${execi 120 ./conkySimpleForecast -d wind_speed} m/s${font}   | ${offset 5}${color1}Temp min/max: ${offset 5}${color}${font Ubuntu:pixelsize=12:bold}${execi 120 ./conkySimpleForecast -d temp_min}°C / ${execi 120 ./conkySimpleForecast -d temp_max}°C${font}    | ${offset 5}${color1}Humidity: ${offset 5}${color}${font Ubuntu:pixelsize=12:bold}${execi 120 ./conkySimpleForecast -d humidity}%${font}
+${offset 160}${voffset 0}${font}${color}${font GE Inspira:pixelsize=26} ${execi 120 ./conkySimpleForecast -d city} ${font}${voffset -30}${color}${font Conkywind:size=42}${execi 120 ./conkySimpleForecast -d wind_deg_font}${font} ${font}${voffset -35}${color}${font GE Inspira:pixelsize=26}${execi 120 ./conkySimpleForecast -d wind_deg}${font}
+${voffset 25}${offset 12}${color1}Wind speed:${offset 5}${font Ubuntu:pixelsize=12:bold}${color}${execi 120 ./conkySimpleForecast -d wind_speed} m/s${font} ${offset 5}${color1}Temp min/max: ${offset 5}${color}${font Ubuntu:pixelsize=12:bold}${execi 120 ./conkySimpleForecast -d temp_min}°C / ${execi 120 ./conkySimpleForecast -d temp_max}°C${font} ${offset 5}${color1}Humidity: ${offset 5}${color}${font Ubuntu:pixelsize=12:bold}${execi 120 ./conkySimpleForecast -d humidity}%${font}
 ${voffset -5}${offset 12}${color1}${stippled_hr 1}${color}
-${offset 12}${color1}Pressure: ${offset 5}${color}${font Ubuntu:pixelsize=12:bold}${execi 120 ./conkySimpleForecast -d pressure} hPa${font}        | ${offset 5}${color1}Clouds: ${offset 5}${color}${font Ubuntu:pixelsize=12:bold}${execi 120 ./conkySimpleForecast -d clouds}${font}${offset 92}|  ${color1}Visibility: ${offset 5}${color}${font Ubuntu:pixelsize=12:bold}${execi 120 ./conkySimpleForecast -d visibility}m${font}
+${offset 12}${color1}Pressure: ${offset 5}${color}${font Ubuntu:pixelsize=12:bold}${execi 120 ./conkySimpleForecast -d pressure} hPa${font} ${offset 5}${color1}Clouds: ${offset 5}${color}${font Ubuntu:pixelsize=12:bold}${execi 120 ./conkySimpleForecast -d clouds}${font} ${offset 5} ${color1}Visibility: ${offset 5}${color}${font Ubuntu:pixelsize=12:bold}${execi 120 ./conkySimpleForecast -d visibility}m${font}
 ${voffset -5}${offset 12}${color1}${stippled_hr 1}${color}
-${offset 12}${color1}Sunrise: ${offset 5}${color}${font Ubuntu:pixelsize=12:bold}${execi 120 ./conkySimpleForecast -d sunrise}${offset 42}${font} |   ${color1}Sunset: ${offset 5}${color}${font Ubuntu:pixelsize=12:bold}${execi 120 ./conkySimpleForecast -d sunset}${font}
-${voffset -5}${offset 12}${color1}${stippled_hr 1}${color}
+${offset 12}${color1}Sunrise: ${offset 5}${color}${font Ubuntu:pixelsize=12:bold}${execi 120 ./conkySimpleForecast -d sunrise}${font} ${offset 5}${font} ${color1}Sunset: ${offset 5}${color}${font Ubuntu:pixelsize=12:bold}${execi 120 ./conkySimpleForecast -d sunset}${font}
+${voffset -5}${offset 5}${color1}${stippled_hr 1}${color}
 ${offset 12}${color1}Last fetched: ${offset 5}${color}${font Ubuntu:pixelsize=12:bold}${execi 120 ./conkySimpleForecast -d dt}
 
-]]; 
+]];
