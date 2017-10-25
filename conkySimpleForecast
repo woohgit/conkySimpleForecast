@@ -214,12 +214,6 @@ function return_field() {
         city)
           data=$(cat ${cache_path} | ${JQ} ".name" -r)
           ;;
-        icon)
-          data=$(cat ${cache_path} | ${JQ} ".weather[0].icon" -r)
-          if [[ ! -f "images/${data}.png" ]]; then
-            curl -s -o "images/${data}.png" "http://openweathermap.org/img/w/${data}.png"
-          fi
-          ;;
         font)
           # ${offset 15}${color EAEAEA}${font ConkyWeather:size=46}${execi 120 conkySimpleForecast -d font}${font}${voffset -30}
           tmp_data=$(cat ${cache_path} | ${JQ} '.weather[0].id' -r)
