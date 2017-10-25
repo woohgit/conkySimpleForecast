@@ -200,11 +200,11 @@ function return_field() {
           data=$(cat ${cache_path} | ${JQ} ".wind.speed" -r)
           ;;
         wind_deg)
-          data=$(cat ${cache_path} | ${JQ} ".wind.deg" -r)
+          data=$(cat ${cache_path} | ${JQ} ".wind.deg" -r | xargs printf "%.f" $p)
           data=$(wind_deg_to_text ${data})
           ;;
         wind_deg_font)
-            tmp_data=$(cat ${cache_path} | ${JQ} ".wind.deg" -r)
+            tmp_data=$(cat ${cache_path} | ${JQ} ".wind.deg" -r | xargs printf "%.f" $p)
             data=$(wind_deg_to_font ${tmp_data})
           ;;
         sunrise|sunset)
